@@ -87,6 +87,14 @@ module XApp
       db.scalar('SELECT COUNT(*) FROM user_posts').to_i
     end
 
+    # Wipe every user-authored row (used by the Settings sheet's "reset"
+    # button). Seed posts come from Feed in-memory so they stay put.
+    def delete_all_user_posts
+      db.run('DELETE FROM post_comments WHERE post_id IN (SELECT id FROM user_posts)')
+      db.run('DELETE FROM user_posts')
+      nil
+    end
+
     # --- Comments -------------------------------------------------------
 
     def comments(post_id)

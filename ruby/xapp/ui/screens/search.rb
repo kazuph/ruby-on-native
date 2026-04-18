@@ -39,6 +39,7 @@ module XApp
 
       SearchScreen = UI.component 'SearchScreen' do |props|
         on_open_post = props[:on_open_post]
+        on_open_user = props[:on_open_user]
 
         query, set_query = use_state('')
         trends           = use_constant { XApp::API.trends }
@@ -115,10 +116,11 @@ module XApp
                         renderItem:   ->(info) {
                           item = info[:item]
                           present Components::PostCard,
-                                  post:      item,
-                                  on_change: ->(_p) {},
-                                  on_open:   on_open_post,
-                                  is_mine:   item[:author][:handle] == my_handle
+                                  post:         item,
+                                  on_change:    ->(_p) {},
+                                  on_open:      on_open_post,
+                                  on_open_user: on_open_user,
+                                  is_mine:      item[:author][:handle] == my_handle
                         }
               end
             end

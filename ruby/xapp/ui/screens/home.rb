@@ -34,6 +34,8 @@ module XApp
 
       HomeScreen = UI.component 'HomeScreen' do |props|
         on_open_post = props[:on_open_post]
+        on_open_user = props[:on_open_user]
+        on_sparkle   = props[:on_sparkle]
 
         active_top,   set_active_top   = use_state('foryou')
         posts,        set_posts        = use_state(-> { XApp::API.timeline })
@@ -73,7 +75,8 @@ module XApp
           present Components::TopBar,
                   tabs:          TOP_TABS,
                   active_tab:    active_top,
-                  on_change_tab: set_active_top
+                  on_change_tab: set_active_top,
+                  on_sparkle:    on_sparkle
 
           banner = node View, style: HOME_STYLES[:banner], testID: 'engine-banner' do
             present Ionicons, name: 'diamond-outline', size: 18, color: COLORS[:accent]
@@ -95,11 +98,12 @@ module XApp
                   renderItem:          ->(info) {
                     item = info[:item]
                     present Components::PostCard,
-                            post:      item,
-                            on_change: update_post,
-                            on_open:   on_open_post,
-                            on_delete: delete_post,
-                            is_mine:   item[:author][:handle] == my_handle
+                            post:         item,
+                            on_change:    update_post,
+                            on_open:      on_open_post,
+                            on_delete:    delete_post,
+                            on_open_user: on_open_user,
+                            is_mine:      item[:author][:handle] == my_handle
                   }
 
           present Pressable,

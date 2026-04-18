@@ -59,13 +59,20 @@ module XApp
       Store.search(query)
     end
 
+    def reset_my_data
+      Store.delete_all_user_posts
+    end
+
     def user(handle)
       u = Feed.seed_users.find { |x| x.handle == handle }
       u && u.to_h
     end
 
     def user_posts(handle)
-      Feed.timeline.select { |p| p.author.handle == handle }.map(&:to_h)
+      seed = Feed.timeline.select { |p| p.author.handle == handle }.map(&:to_h)
+      # `master_you` (me) has SQLite-persisted posts too — merge them in.
+      mine = handle == Feed.me.handle ? Store.user_posts : []
+      mine + seed
     end
 
     def trends

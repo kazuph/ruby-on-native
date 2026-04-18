@@ -5,6 +5,7 @@
 import * as React from 'react';
 import {
   Alert,
+  BackHandler,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -55,6 +56,13 @@ type Bridge = {
       cancelLabel: string,
       onOk: () => void,
     ) => void;
+    /**
+     * Subscribe to the Android hardware back press. `handler` returns true
+     * when it consumed the event (so RN's default exit-the-app behaviour is
+     * suppressed); return false to let it fall through. The returned
+     * function removes the listener.
+     */
+    addBackHandler: (handler: () => boolean) => () => void;
   };
   SQLite: {
     open: (name: string) => SQLite.SQLiteDatabase;
@@ -109,6 +117,13 @@ if (!g.__RN__) {
           { text: cancelLabel, style: 'cancel' },
           { text: okLabel, style: 'destructive', onPress: onOk },
         ]);
+      },
+      addBackHandler: (handler) => {
+        const sub = BackHandler.addEventListener(
+          'hardwareBackPress',
+          handler,
+        );
+        return () => sub.remove();
       },
     },
     SQLite: {

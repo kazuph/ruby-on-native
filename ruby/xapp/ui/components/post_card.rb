@@ -61,12 +61,13 @@ module XApp
       end
 
       PostCard = UI.component 'PostCard' do |props|
-        post        = props[:post]
-        on_change   = props[:on_change]
-        on_open     = props[:on_open]    # optional: tap on card → navigate
-        on_delete   = props[:on_delete]  # optional: tap trash on own posts
-        is_mine     = props[:is_mine]    # pre-computed by parent (nil/false for seed)
-        prefix      = props[:test_id_prefix] || "post-#{post[:id]}"
+        post         = props[:post]
+        on_change    = props[:on_change]
+        on_open      = props[:on_open]         # optional: tap on card → navigate
+        on_delete    = props[:on_delete]       # optional: tap trash on own posts
+        on_open_user = props[:on_open_user]    # optional: tap avatar / handle
+        is_mine      = props[:is_mine]         # pre-computed by parent (nil/false for seed)
+        prefix       = props[:test_id_prefix] || "post-#{post[:id]}"
 
         like_color      = post[:liked]      ? COLORS[:like]   : COLORS[:textMuted]
         repost_color    = post[:reposted]   ? COLORS[:repost] : COLORS[:textMuted]
@@ -77,6 +78,7 @@ module XApp
         handle_bookmark = -> { on_change.call(XApp::Engagement.toggle_bookmark(post)) }
         handle_open     = -> { on_open&.call(post) }
         handle_delete   = -> { on_delete&.call(post) }
+        handle_author   = -> { on_open_user&.call(post[:author][:handle]) }
 
         present Pressable,
                 onPress:    handle_open,
@@ -86,19 +88,34 @@ module XApp
                 accessible: false,
                 style:      POST_CARD_STYLES[:card],
                 testID:     prefix do
-          present Image, source: { uri: post[:author][:avatarUrl] }, style: POST_CARD_STYLES[:avatar]
+          present Pressable,
+                  onPress: handle_author,
+                  hitSlop: 6,
+                  testID:  "#{prefix}-avatar" do
+            present Image, source: { uri: post[:author][:avatarUrl] }, style: POST_CARD_STYLES[:avatar]
+          end
 
           present View, style: POST_CARD_STYLES[:body] do
             present View, style: POST_CARD_STYLES[:header_row] do
-              present Text, numberOfLines: 1, style: POST_CARD_STYLES[:name] do
-                post[:author][:displayName]
+              present Pressable,
+                      onPress: handle_author,
+                      hitSlop: 4,
+                      testID:  "#{prefix}-author" do
+                present Text, numberOfLines: 1, style: POST_CARD_STYLES[:name] do
+                  post[:author][:displayName]
+                end
               end
               if post[:author][:verified]
                 present Ionicons, name: 'checkmark-circle', size: 16,
                                   color: COLORS[:accent], style: POST_CARD_STYLES[:verified]
               end
-              present Text, numberOfLines: 1, style: POST_CARD_STYLES[:handle] do
-                "  @#{post[:author][:handle]}"
+              present Pressable,
+                      onPress: handle_author,
+                      hitSlop: 4,
+                      testID:  "#{prefix}-handle" do
+                present Text, numberOfLines: 1, style: POST_CARD_STYLES[:handle] do
+                  "  @#{post[:author][:handle]}"
+                end
               end
               present Text, style: POST_CARD_STYLES[:dot] do
                 '·'

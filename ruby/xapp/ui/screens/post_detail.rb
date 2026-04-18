@@ -53,8 +53,9 @@ module XApp
       )
 
       PostDetailScreen = UI.component 'PostDetailScreen' do |props|
-        post_id = props[:post_id]
-        on_back = props[:on_back]
+        post_id      = props[:post_id]
+        on_back      = props[:on_back]
+        on_open_user = props[:on_open_user]
 
         post,     set_post     = use_state(-> { XApp::API.find_post(post_id) })
         comments, set_comments = use_state(-> { XApp::API.comments(post_id) })
@@ -79,11 +80,12 @@ module XApp
         end
 
         submit_reply = lambda do
-          next unless can_reply
-          XApp::API.add_comment(post_id, trimmed)
-          set_comments.call(XApp::API.comments(post_id))
-          set_post.call(XApp::API.find_post(post_id))
-          set_draft.call('')
+          if can_reply
+            XApp::API.add_comment(post_id, trimmed)
+            set_comments.call(XApp::API.comments(post_id))
+            set_post.call(XApp::API.find_post(post_id))
+            set_draft.call('')
+          end
         end
 
         send_style = can_reply ? DETAIL_STYLES[:reply_send] : [DETAIL_STYLES[:reply_send], DETAIL_STYLES[:reply_send_off]]
@@ -115,10 +117,11 @@ module XApp
               end
             else
               present Components::PostCard,
-                      post:      post,
-                      on_change: update_post,
-                      on_delete: delete_post,
-                      is_mine:   post[:author][:handle] == my_handle,
+                      post:         post,
+                      on_change:    update_post,
+                      on_delete:    delete_post,
+                      on_open_user: on_open_user,
+                      is_mine:      post[:author][:handle] == my_handle,
                       test_id_prefix: 'detail-post'
 
               if comments.empty?
@@ -133,16 +136,30 @@ module XApp
                           key:    c[:id],
                           style:  DETAIL_STYLES[:comment_row],
                           testID: "comment-#{idx}" do
-                    present Image,
-                            source: { uri: c[:author][:avatarUrl] },
-                            style:  DETAIL_STYLES[:avatar]
+                    present Pressable,
+                            onPress: -> { on_open_user&.call(c[:author][:handle]) },
+                            hitSlop: 6,
+                            testID:  "comment-#{idx}-avatar" do
+                      present Image,
+                              source: { uri: c[:author][:avatarUrl] },
+                              style:  DETAIL_STYLES[:avatar]
+                    end
                     present View, style: DETAIL_STYLES[:comment_body] do
                       present View, style: DETAIL_STYLES[:comment_header] do
-                        present Text, numberOfLines: 1, style: DETAIL_STYLES[:name] do
-                          c[:author][:displayName]
+                        present Pressable,
+                                onPress: -> { on_open_user&.call(c[:author][:handle]) },
+                                hitSlop: 4,
+                                testID:  "comment-#{idx}-handle" do
+                          present Text, numberOfLines: 1, style: DETAIL_STYLES[:name] do
+                            c[:author][:displayName]
+                          end
                         end
-                        present Text, numberOfLines: 1, style: DETAIL_STYLES[:handle] do
-                          " @#{c[:author][:handle]}"
+                        present Pressable,
+                                onPress: -> { on_open_user&.call(c[:author][:handle]) },
+                                hitSlop: 4 do
+                          present Text, numberOfLines: 1, style: DETAIL_STYLES[:handle] do
+                            " @#{c[:author][:handle]}"
+                          end
                         end
                         present Text, style: DETAIL_STYLES[:dot] do
                           '·'

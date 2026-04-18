@@ -14,7 +14,7 @@ module XApp
           justifyContent: 'center'
         },
         logo:    { color: COLORS[:text], fontSize: 26, fontWeight: '900' },
-        sparkle: { position: 'absolute', right: SPACING[:lg] },
+        sparkle: { position: 'absolute', right: SPACING[:lg], padding: 4 },
         tab_row: { flexDirection: 'row', justifyContent: 'space-around' },
         tab:     { paddingVertical: SPACING[:sm], alignItems: 'center', flex: 1 },
         label:   { color: COLORS[:textMuted], fontSize: 15 },
@@ -29,14 +29,20 @@ module XApp
         tabs       = props[:tabs]
         active_tab = props[:active_tab]
         on_change  = props[:on_change_tab]
+        on_sparkle = props[:on_sparkle]
 
         present View, style: TOP_BAR_STYLES[:wrap], testID: 'top-bar' do
           present View, style: TOP_BAR_STYLES[:logo_row] do
             present Text, style: TOP_BAR_STYLES[:logo] do
               '𝕏'
             end
-            present Ionicons, name: 'sparkles-outline', size: 20,
-                              color: COLORS[:text], style: TOP_BAR_STYLES[:sparkle]
+            present Pressable,
+                    onPress: on_sparkle,
+                    hitSlop: 12,
+                    style:   TOP_BAR_STYLES[:sparkle],
+                    testID:  'top-sparkle' do
+              present Ionicons, name: 'sparkles-outline', size: 20, color: COLORS[:text]
+            end
           end
 
           present View, style: TOP_BAR_STYLES[:tab_row] do
