@@ -51,8 +51,11 @@ module XApp
         end
 
         submit_post = lambda do |body|
-          XApp::API.build_new_post(body)
-          refresh_posts.call
+          # `build_new_post` returns the freshly-persisted post shaped for
+          # the timeline — use it directly so we skip another SQLite round
+          # trip to rebuild the whole feed.
+          new_post = XApp::API.build_new_post(body)
+          set_posts.call(->(current) { [new_post] + current.reject { |p| p[:id] == new_post[:id] } })
           set_compose_open.call(false)
         end
 

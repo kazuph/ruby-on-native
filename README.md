@@ -5,10 +5,14 @@
 > そのまま iOS / Android でレンダリング。投稿は SQLite に永続化。
 
 <p align="center">
-  <img src=".artifacts/Xクローン構築/screenshots/home_initial.png"         width="220"/>
-  <img src=".artifacts/Xクローン構築/screenshots/compose_open.png"         width="220"/>
-  <img src=".artifacts/Xクローン構築/screenshots/nav_search.png"           width="220"/>
-  <img src=".artifacts/Xクローン構築/screenshots/sqlite_after_restart.png" width="220"/>
+  <img src="docs/screenshots/home_initial.png"              width="200"/>
+  <img src="docs/screenshots/post_detail_seed_comments.png" width="200"/>
+  <img src="docs/screenshots/profile_from_avatar.png"       width="200"/>
+  <img src="docs/screenshots/settings_sheet.png"            width="200"/>
+</p>
+<p align="center">
+  <img src="docs/screenshots/compose_open.png"   width="200"/>
+  <img src="docs/screenshots/search_results.png" width="200"/>
 </p>
 
 ## こころざし
@@ -96,23 +100,25 @@ ruby/
     api.rb                      # UI 層が叩くファサード
     ui.rb                       # present DSL / hooks / Ruby↔JS 変換
     ui/
-      components/{top_bar,bottom_tabs,post_card,composer}.rb
-      screens/{home,search,notifications,messages}.rb
+      nav.rb                    # スタックベースのナビゲーション
+      components/{top_bar,bottom_tabs,post_card,composer,settings_sheet}.rb
+      screens/{home,search,notifications,messages,post_detail,profile}.rb
       root.rb                   # SafeAreaProvider → RootShell
       register.rb               # __RN__.setRoot(Root)
 
 src/
-  native-bridge.ts              # React / RN / Expo / SQLite を __RN__ に橋渡し
+  native-bridge.ts              # React / RN / Expo / SQLite / Alert / BackHandler を __RN__ に橋渡し
   ruby-generated/xapp.js        # Opal の成果物 (git管理外)
 
 App.tsx                         # RubyRoot を return するだけ
 index.ts                        # Expo registerRootComponent
 
+docs/screenshots/               # README に貼る証跡 (git 管理対象)
 .maestro/
   config.yaml  README.md
-  flows/                        # 5 本の機能別リグレッション
+  flows/                        # 11 本の機能別リグレッション
 
-.artifacts/                     # スクショ + レポート (git管理外)
+.artifacts/                     # 作業中のスクショ置き場 (git管理外)
 ```
 
 ## 起動
@@ -131,7 +137,11 @@ npm run build:android:apk
 ```
 
 生成された APK は debug keystore で v2 署名済。端末側で「提供元不明」を許可して
-`adb install` または直接インストールできます。
+`adb install -r app-release.apk` で既存バージョンを上書きインストールできます。
+
+**macOS / Linux 前提** — スクリプト内で `./gradlew` を直接叩いているため、
+Windows で動かす場合は同内容を `gradlew.bat assembleRelease` に置き換えるか、
+`npx expo run:android --variant release` に寄せてください。
 
 ## テスト (Maestro)
 
@@ -140,15 +150,21 @@ npm run maestro:smoke
 # → maestro test .maestro/flows/ のショートカット
 ```
 
-5 本のフロー:
+11 本のフロー:
 
-| #   | Flow                            | 何を守るか                             |
-|-----|---------------------------------|----------------------------------------|
-| 01  | `01_home_render.yaml`           | 起動直後の Ruby レンダリング           |
-| 02  | `02_post_actions.yaml`          | いいね / RT トグル (Engagement 往復)   |
-| 03  | `03_tab_navigation.yaml`        | 4 タブ切替 + 各画面の存在              |
-| 04  | `04_compose_and_persist.yaml`   | コンポーザ → タイムライン先頭に挿入    |
-| 05  | `05_sqlite_persistence.yaml`    | 再起動を跨いだ SQLite 永続化           |
+| #   | Flow                                | 何を守るか                                          |
+|-----|-------------------------------------|-----------------------------------------------------|
+| 01  | `01_home_render.yaml`               | 起動直後の Ruby レンダリング                        |
+| 02  | `02_post_actions.yaml`              | いいね / RT トグル (Engagement 往復)                |
+| 03  | `03_tab_navigation.yaml`            | 4 タブ切替 + 各画面の存在                           |
+| 04  | `04_compose_and_persist.yaml`       | コンポーザ → タイムライン先頭に挿入                 |
+| 05  | `05_sqlite_persistence.yaml`        | 再起動を跨いだ SQLite 永続化                        |
+| 06  | `06_post_detail_and_comment.yaml`   | 詳細画面遷移 + seed コメント + 返信投稿 + 戻る       |
+| 07  | `07_search.yaml`                    | 検索 (本文/ハンドル/名前) + 空結果 + クリア          |
+| 08  | `08_delete_own_post.yaml`           | 自分のポストを Alert 確認して削除                    |
+| 09  | `09_back_handler.yaml`              | nav.back の多段ポップ (home → detail → profile)     |
+| 10  | `10_profile_from_post.yaml`         | avatar / @handle / コメントアバターから profile      |
+| 11  | `11_sparkles_settings.yaml`         | ✨ タップで設定シート + SQLite 一掃                  |
 
 Flow 追加時の規約は `.maestro/README.md` を参照。
 

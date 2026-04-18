@@ -127,20 +127,21 @@ module XApp
       db.scalar('SELECT COUNT(*) FROM post_comments WHERE post_id = ?', post_id).to_i
     end
 
-    # --- Search ---------------------------------------------------------
+    # --- Bulk helpers ---------------------------------------------------
 
-    # Case-insensitive substring match over body + handle + displayName.
-    # Returns timeline-shaped posts (seed + user posts).
-    def search(query)
-      q = query.to_s.strip
-      return [] if q.empty?
-      needle = q.downcase
-      API.timeline.select do |p|
-        body   = p[:body].to_s.downcase
-        handle = p[:author][:handle].to_s.downcase
-        name   = p[:author][:displayName].to_s.downcase
-        body.include?(needle) || handle.include?(needle) || name.include?(needle)
-      end
+    # `Store.comment_counts(%w[p1 p2 p3])` → `{ 'p1' => 2, 'p3' => 2 }`
+    # One `GROUP BY` query instead of N round-trips — used by the timeline
+    # facade to avoid the N+1 pattern for reply counts.
+    def comment_counts(post_ids)
+      ids = Array(post_ids).uniq
+      return {} if ids.empty?
+      placeholders = (['?'] * ids.length).join(',')
+      rows = db.all(
+        "SELECT post_id, COUNT(*) AS c FROM post_comments " \
+        "WHERE post_id IN (#{placeholders}) GROUP BY post_id",
+        *ids
+      )
+      rows.each_with_object({}) { |r, out| out[r[:post_id]] = r[:c].to_i }
     end
 
     # --- Seed comments --------------------------------------------------

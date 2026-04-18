@@ -3,7 +3,8 @@
 #
 # Regression coverage:
 #   - PostCard tap → Nav push to :post_detail
-#   - detail-post-p1 renders (we reuse PostCard with a different prefix)
+#   - PostCard renders with `test_id_prefix: 'detail-post'` (no per-post
+#     id suffix — all selectors start with `detail-post-...`)
 #   - Seed comments from Store.seed_comments! are visible
 #   - Submitting a new reply inserts a post_comments row and the comment
 #     shows inline

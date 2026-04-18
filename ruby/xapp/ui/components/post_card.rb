@@ -80,14 +80,21 @@ module XApp
         handle_delete   = -> { on_delete&.call(post) }
         handle_author   = -> { on_open_user&.call(post[:author][:handle]) }
 
-        present Pressable,
-                onPress:    handle_open,
-                # Let Maestro (and VoiceOver) still see every child node;
-                # otherwise the outer Pressable swallows the tree into one
-                # button-style accessible element and text assertions fail.
-                accessible: false,
-                style:      POST_CARD_STYLES[:card],
-                testID:     prefix do
+        # Render the card as a `Pressable` only when there's actually
+        # somewhere to go (`on_open` set). Otherwise fall back to a plain
+        # `View` so we don't paint a dead touch target on detail / profile
+        # screens where the surrounding scroll already owns the gesture.
+        card_type  = on_open ? Pressable : View
+        card_props = { style: POST_CARD_STYLES[:card], testID: prefix }
+        if on_open
+          card_props[:onPress]    = handle_open
+          # VoiceOver picks up the child nodes (and Maestro relies on it
+          # for text assertions) only when the outer Pressable doesn't
+          # claim the whole subtree as a single button-style element.
+          card_props[:accessible] = false
+        end
+
+        present card_type, **card_props do
           present Pressable,
                   onPress: handle_author,
                   hitSlop: 6,
@@ -124,7 +131,10 @@ module XApp
                 XApp::Formatter.relative_time(post[:createdAt])
               end
               present View, style: POST_CARD_STYLES[:grow]
-              if is_mine
+              # Show the trash icon only when the post is actually mine
+              # *and* the caller wired up an `on_delete` handler, so we
+              # never paint a visible-but-dead affordance.
+              if is_mine && on_delete
                 present Pressable,
                         onPress: handle_delete,
                         hitSlop: 8,

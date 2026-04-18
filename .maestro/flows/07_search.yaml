@@ -1,5 +1,7 @@
-# Regression: search now actually filters the timeline via XApp::Store.search.
-# Empty query keeps showing trends; non-empty query shows ranked results.
+# Regression: search now actually filters the timeline via XApp::API.search.
+# Empty query keeps showing trends; non-empty query shows filtered
+# results (case-insensitive substring match — not ranked, kept in the
+# feed's natural order).
 #
 # Regression coverage:
 #   - search-screen shows trends by default

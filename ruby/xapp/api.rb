@@ -20,10 +20,14 @@ module XApp
     # User-composed posts (persisted in SQLite) come first, then seed posts
     # from `Feed.timeline` — matches the X feed mental model where your own
     # just-posted tweet appears at the top.
+    #
+    # Comment counts are fetched in one `GROUP BY` query (see
+    # `Store.comment_counts`) to avoid an N+1 on every render.
     def timeline
-      seed = Feed.timeline.map do |p|
-        h = p.to_h
-        h.merge(replies: h[:replies] + Store.comment_count(h[:id]))
+      seed_hashes = Feed.timeline.map(&:to_h)
+      counts = Store.comment_counts(seed_hashes.map { |h| h[:id] })
+      seed = seed_hashes.map do |h|
+        h.merge(replies: h[:replies] + counts.fetch(h[:id], 0))
       end
       Store.user_posts + seed
     end
@@ -55,8 +59,20 @@ module XApp
       Store.insert_comment(post_id, body)
     end
 
+    # Case-insensitive substring match over body / handle / displayName.
+    # Lives in the API layer (not Store) so the search set stays "whatever
+    # the user sees on the feed" — we filter the same list `timeline`
+    # returns.
     def search(query)
-      Store.search(query)
+      q = query.to_s.strip
+      return [] if q.empty?
+      needle = q.downcase
+      timeline.select do |p|
+        body   = p[:body].to_s.downcase
+        handle = p[:author][:handle].to_s.downcase
+        name   = p[:author][:displayName].to_s.downcase
+        body.include?(needle) || handle.include?(needle) || name.include?(needle)
+      end
     end
 
     def reset_my_data

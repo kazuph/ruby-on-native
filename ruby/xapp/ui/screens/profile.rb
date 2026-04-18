@@ -58,9 +58,19 @@ module XApp
         on_back  = props[:on_back]
         on_open  = props[:on_open_post]
 
-        user  = use_memo(handle) { XApp::API.user(handle) }
-        posts = use_memo(handle) { XApp::API.user_posts(handle) }
-        me    = use_constant { XApp::API.me }
+        user             = use_memo(handle) { XApp::API.user(handle) }
+        posts, set_posts = use_state(-> { XApp::API.user_posts(handle) })
+        me               = use_constant { XApp::API.me }
+        is_me            = user && user[:handle] == me[:handle]
+
+        delete_post = lambda do |post|
+          confirm('ポストを削除しますか？',
+                  '削除すると元に戻せません。',
+                  ok: '削除する', cancel: 'キャンセル') do
+            XApp::API.delete_post(post[:id])
+            set_posts.call(XApp::API.user_posts(handle))
+          end
+        end
 
         present View, style: PROFILE_STYLES[:wrap], testID: 'profile-screen' do
           present View, style: PROFILE_STYLES[:nav_bar] do
@@ -88,7 +98,6 @@ module XApp
               present View, style: PROFILE_STYLES[:header] do
                 present View, style: PROFILE_STYLES[:avatar_row] do
                   present Image, source: { uri: user[:avatarUrl] }, style: PROFILE_STYLES[:avatar]
-                  is_me = user[:handle] == me[:handle]
                   present Pressable,
                           style:  PROFILE_STYLES[:follow_btn],
                           testID: 'profile-follow' do
@@ -163,7 +172,11 @@ module XApp
                         post:      p,
                         on_change: ->(_n) {},
                         on_open:   on_open,
-                        is_mine:   user[:handle] == me[:handle],
+                        # Only own posts are deletable — seed posts (other
+                        # users) stay immutable — so we pair `is_mine`
+                        # with a real `on_delete` hander here.
+                        on_delete: (is_me ? delete_post : nil),
+                        is_mine:   is_me,
                         test_id_prefix: "profile-post-#{idx}"
               end
             end
