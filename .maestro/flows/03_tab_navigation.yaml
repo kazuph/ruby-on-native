@@ -10,6 +10,13 @@ appId: host.exp.Exponent
 name: "03 Bottom tab navigation"
 tags: [navigation]
 ---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
 # Search
 - tapOn:
     id: "bottom-tab-search"

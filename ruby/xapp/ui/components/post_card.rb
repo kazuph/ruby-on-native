@@ -61,9 +61,13 @@ module XApp
       end
 
       PostCard = UI.component 'PostCard' do |props|
-        post        = props[:post]
-        on_change   = props[:on_change]
-        prefix      = props[:test_id_prefix] || "post-#{post[:id]}"
+        post         = props[:post]
+        on_change    = props[:on_change]
+        on_open      = props[:on_open]         # optional: tap on card → navigate
+        on_delete    = props[:on_delete]       # optional: tap trash on own posts
+        on_open_user = props[:on_open_user]    # optional: tap avatar / handle
+        is_mine      = props[:is_mine]         # pre-computed by parent (nil/false for seed)
+        prefix       = props[:test_id_prefix] || "post-#{post[:id]}"
 
         like_color      = post[:liked]      ? COLORS[:like]   : COLORS[:textMuted]
         repost_color    = post[:reposted]   ? COLORS[:repost] : COLORS[:textMuted]
@@ -72,21 +76,53 @@ module XApp
         handle_like     = -> { on_change.call(XApp::Engagement.toggle_like(post)) }
         handle_repost   = -> { on_change.call(XApp::Engagement.toggle_repost(post)) }
         handle_bookmark = -> { on_change.call(XApp::Engagement.toggle_bookmark(post)) }
+        handle_open     = -> { on_open&.call(post) }
+        handle_delete   = -> { on_delete&.call(post) }
+        handle_author   = -> { on_open_user&.call(post[:author][:handle]) }
 
-        present View, style: POST_CARD_STYLES[:card], testID: prefix do
-          present Image, source: { uri: post[:author][:avatarUrl] }, style: POST_CARD_STYLES[:avatar]
+        # Render the card as a `Pressable` only when there's actually
+        # somewhere to go (`on_open` set). Otherwise fall back to a plain
+        # `View` so we don't paint a dead touch target on detail / profile
+        # screens where the surrounding scroll already owns the gesture.
+        card_type  = on_open ? Pressable : View
+        card_props = { style: POST_CARD_STYLES[:card], testID: prefix }
+        if on_open
+          card_props[:onPress]    = handle_open
+          # VoiceOver picks up the child nodes (and Maestro relies on it
+          # for text assertions) only when the outer Pressable doesn't
+          # claim the whole subtree as a single button-style element.
+          card_props[:accessible] = false
+        end
+
+        present card_type, **card_props do
+          present Pressable,
+                  onPress: handle_author,
+                  hitSlop: 6,
+                  testID:  "#{prefix}-avatar" do
+            present Image, source: { uri: post[:author][:avatarUrl] }, style: POST_CARD_STYLES[:avatar]
+          end
 
           present View, style: POST_CARD_STYLES[:body] do
             present View, style: POST_CARD_STYLES[:header_row] do
-              present Text, numberOfLines: 1, style: POST_CARD_STYLES[:name] do
-                post[:author][:displayName]
+              present Pressable,
+                      onPress: handle_author,
+                      hitSlop: 4,
+                      testID:  "#{prefix}-author" do
+                present Text, numberOfLines: 1, style: POST_CARD_STYLES[:name] do
+                  post[:author][:displayName]
+                end
               end
               if post[:author][:verified]
                 present Ionicons, name: 'checkmark-circle', size: 16,
                                   color: COLORS[:accent], style: POST_CARD_STYLES[:verified]
               end
-              present Text, numberOfLines: 1, style: POST_CARD_STYLES[:handle] do
-                "  @#{post[:author][:handle]}"
+              present Pressable,
+                      onPress: handle_author,
+                      hitSlop: 4,
+                      testID:  "#{prefix}-handle" do
+                present Text, numberOfLines: 1, style: POST_CARD_STYLES[:handle] do
+                  "  @#{post[:author][:handle]}"
+                end
               end
               present Text, style: POST_CARD_STYLES[:dot] do
                 '·'
@@ -95,7 +131,19 @@ module XApp
                 XApp::Formatter.relative_time(post[:createdAt])
               end
               present View, style: POST_CARD_STYLES[:grow]
-              present Ionicons, name: 'ellipsis-horizontal', size: 16, color: COLORS[:textMuted]
+              # Show the trash icon only when the post is actually mine
+              # *and* the caller wired up an `on_delete` handler, so we
+              # never paint a visible-but-dead affordance.
+              if is_mine && on_delete
+                present Pressable,
+                        onPress: handle_delete,
+                        hitSlop: 8,
+                        testID:  "#{prefix}-delete" do
+                  present Ionicons, name: 'trash-outline', size: 16, color: COLORS[:textMuted]
+                end
+              else
+                present Ionicons, name: 'ellipsis-horizontal', size: 16, color: COLORS[:textMuted]
+              end
             end
 
             present Text, style: POST_CARD_STYLES[:body_text] do

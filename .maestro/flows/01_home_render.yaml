@@ -10,6 +10,13 @@ appId: host.exp.Exponent
 name: "01 Home render"
 tags: [smoke, home]
 ---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
 - assertVisible:
     id: "app-root"
 - assertVisible:
@@ -21,7 +28,12 @@ tags: [smoke, home]
 - assertVisible:
     id: "engine-banner"
 - assertVisible: "Engine: Opal (opal)"
-- assertVisible:
-    id: "post-p1"
+# post-p1 is a seed post — SQLite user posts may appear above it if
+# earlier flows ran, so scroll until it's on screen.
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
 - takeScreenshot:
     path: "home_initial"

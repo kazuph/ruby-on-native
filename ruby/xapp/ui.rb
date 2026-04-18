@@ -72,8 +72,7 @@ module XApp
             for (var i = 0; i < arguments.length; i++) {
               args.push(uiModule.__walk_js_to_rb__(arguments[i]));
             }
-            var out = p.$call.apply(p, args);
-            return out === nilRef ? null : out;
+            return p.$call.apply(p, args);
           };
         }
         function convert(v) {
@@ -281,6 +280,30 @@ module XApp
 
     def use_safe_area_insets
       Native(`__RN__.Expo.useSafeAreaInsets()`)
+    end
+
+    # --- OS-level UI ----------------------------------------------------
+
+    # `confirm '削除しますか？', 'このポストを削除します', ok: '削除' do; ... end`
+    # Shows an OS confirmation dialog and runs the block iff the user
+    # taps OK. Cancel is a silent no-op.
+    def confirm(title, message, ok: 'OK', cancel: 'キャンセル', &on_ok)
+      cb = on_ok ? wrap_proc(on_ok) : `function(){}`
+      `__RN__.UI.confirm(#{title}, #{message}, #{ok}, #{cancel}, #{cb})`
+      nil
+    end
+
+    # Subscribe to Android's hardware back button. The block must return
+    # `true` when it consumed the press (preventing RN's default "exit
+    # the app" behaviour) or `false` to let it fall through. iOS has no
+    # hardware back button; the listener is a safe no-op there.
+    def use_back_handler(*deps, &block)
+      use_effect(*deps) do
+        handler_js = wrap_proc(block)
+        # The block's last expression bubbles out as the useEffect cleanup;
+        # RN's addBackHandler returns exactly that unsubscribe function.
+        `return __RN__.UI.addBackHandler(#{handler_js})`
+      end
     end
 
     # --- Component factory ----------------------------------------------

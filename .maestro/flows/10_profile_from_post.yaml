@@ -1,0 +1,87 @@
+# Regression: tapping a user's avatar / @handle anywhere navigates to
+# that user's ProfileScreen. Covered from the timeline and from the
+# comment thread.
+#
+# Regression coverage:
+#   - PostCard avatar → profile
+#   - PostCard @handle → profile
+#   - Comment avatar in detail → profile
+#   - Profile shows bio / follower counts / user posts
+#   - profile-back restores the originating screen
+appId: host.exp.Exponent
+name: "10 Profile navigation from post + comment"
+tags: [navigation, profile]
+---
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+
+# --- From timeline avatar ---
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1-avatar"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+- assertVisible: ".*Nyan.*Cafe.*"
+- assertVisible: ".*@nyancafe.*"
+- assertVisible: ".*猫とコーヒー.*"
+- takeScreenshot:
+    path: "profile_from_avatar"
+- tapOn:
+    id: "profile-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 4000
+
+# --- From timeline @handle ---
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1-handle"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+- assertVisible: ".*@nyancafe.*"
+- tapOn:
+    id: "profile-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 4000
+
+# --- From a comment avatar ---
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1"
+- extendedWaitUntil:
+    visible:
+      id: "post-detail-screen"
+    timeout: 5000
+# Seed comments: idx 0 = reactive_gal, idx 1 = kuro_neko
+- tapOn:
+    id: "comment-0-avatar"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+- assertVisible: ".*@reactive_gal.*"
+- takeScreenshot:
+    path: "profile_from_comment"

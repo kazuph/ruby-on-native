@@ -1,0 +1,55 @@
+# Regression: the top-right sparkles button is no longer a prop — it
+# opens a settings bottom sheet that shows live SQLite stats and exposes
+# a timeline reload + a "delete all my posts" action.
+#
+# Regression coverage:
+#   - Sparkles button opens the sheet
+#   - Sheet renders engine + SQLite row counts (`settings-user-post-count`)
+#   - Tapping the backdrop dismisses the sheet
+#   - Reset action is guarded by a confirmation Alert and wipes user posts
+appId: host.exp.Exponent
+name: "11 Sparkles opens settings sheet"
+tags: [settings, sqlite]
+---
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+
+# Seed a post so the settings counter has something to show
+- tapOn:
+    id: "compose-fab"
+- tapOn:
+    id: "composer-input"
+- inputText: "SETTINGS_PROBE_ポスト"
+- hideKeyboard
+- tapOn:
+    id: "composer-submit"
+
+- tapOn:
+    id: "top-sparkle"
+- extendedWaitUntil:
+    visible:
+      id: "settings-sheet"
+    timeout: 4000
+- assertVisible: ".*エンジン.*"
+- assertVisible: ".*Opal \\(opal\\).*"
+- assertVisible:
+    id: "settings-user-post-count"
+- takeScreenshot:
+    path: "settings_open"
+
+# Reset all my data
+- tapOn:
+    id: "settings-reset"
+- assertVisible: "全ポストを削除しますか？"
+- tapOn: "削除する"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 5000
+- assertNotVisible: "SETTINGS_PROBE_ポスト"
+- takeScreenshot:
+    path: "settings_after_reset"

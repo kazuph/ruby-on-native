@@ -1,0 +1,61 @@
+# Regression: the in-app back affordance pops the Nav stack one level
+# at a time and never crashes — regardless of how deeply nested we are.
+#
+# On Android the same nav.back is wired up to the hardware back button
+# via `UI.use_back_handler`; iOS has no hardware back so we exercise the
+# nav-bar back button (`detail-back` / `profile-back`) that is also what
+# BackHandler feeds into.
+#
+# Regression coverage:
+#   - home → detail → profile chain
+#   - tap profile-back pops to the detail screen
+#   - tap detail-back pops to home
+#   - the app is still alive at the end (Maestro process survives)
+appId: host.exp.Exponent
+name: "09 Back unwinds Nav stack"
+tags: [navigation, back_handler]
+---
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1"
+- extendedWaitUntil:
+    visible:
+      id: "post-detail-screen"
+    timeout: 5000
+
+# Drill into the author profile from the detail view
+- tapOn:
+    id: "detail-post-avatar"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+
+# Profile → back: should restore the detail screen
+- tapOn:
+    id: "profile-back"
+- extendedWaitUntil:
+    visible:
+      id: "post-detail-screen"
+    timeout: 4000
+
+# Detail → back: should restore home
+- tapOn:
+    id: "detail-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 4000
+- takeScreenshot:
+    path: "back_returned_home"

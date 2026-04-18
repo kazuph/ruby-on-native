@@ -34,6 +34,7 @@ tags: [compose, sqlite, persistence]
 # Relaunch via Expo Go deep link. `openLink` works even while the app is
 # running — Expo Go tears down the old JS context before reloading the
 # bundle. The SQLite file on disk is untouched.
+- stopApp
 - openLink: "exp://127.0.0.1:8081"
 - extendedWaitUntil:
     visible:

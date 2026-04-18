@@ -1,0 +1,55 @@
+# Regression: posts by @master_you show a trash icon and can be removed
+# via an OS Alert confirmation. Seed posts never render the trash icon.
+#
+# Regression coverage:
+#   - Compose a uniquely-tagged post → trash icon appears for that post
+#   - Tap trash → "削除" on the system Alert
+#   - Post disappears from the timeline
+#   - Relaunching (SQLite) keeps it deleted
+appId: host.exp.Exponent
+name: "08 Delete own post"
+tags: [delete, sqlite]
+---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+- tapOn:
+    id: "compose-fab"
+- tapOn:
+    id: "composer-input"
+- inputText: "DELETE_CANARY_削除テスト専用ポスト"
+- tapOn:
+    id: "composer-submit"
+- extendedWaitUntil:
+    visible: "DELETE_CANARY_削除テスト専用ポスト"
+    timeout: 4000
+- takeScreenshot:
+    path: "delete_before"
+
+# Trash icon is wired via the PostCard header. The id follows the pattern
+# `post-local-<epoch>-delete`; because the middle portion is dynamic we
+# match it with a regex. Maestro's `id:` uses full-string regex matching.
+- tapOn:
+    id: "post-local-.*-delete"
+- assertVisible: "ポストを削除しますか？"
+# Alert buttons: [キャンセル] [削除する]. The label is unique to the button
+# (title/message don't contain "削除する") so the tap lands on the right
+# element regardless of the alert's internal layout.
+- tapOn: "削除する"
+# Give the React state a moment to settle after the Alert dismiss
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 4000
+- assertNotVisible: "DELETE_CANARY_削除テスト専用ポスト"
+- takeScreenshot:
+    path: "delete_after"

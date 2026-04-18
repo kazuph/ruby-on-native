@@ -1,0 +1,64 @@
+# Regression: tapping a post navigates to the PostDetailScreen, seed
+# comments render, and a fresh comment persists via XApp::Store.insert_comment.
+#
+# Regression coverage:
+#   - PostCard tap → Nav push to :post_detail
+#   - PostCard renders with `test_id_prefix: 'detail-post'` (no per-post
+#     id suffix — all selectors start with `detail-post-...`)
+#   - Seed comments from Store.seed_comments! are visible
+#   - Submitting a new reply inserts a post_comments row and the comment
+#     shows inline
+#   - Back button pops the nav stack and returns to the tab-level home.
+appId: host.exp.Exponent
+name: "06 Post detail + comment thread"
+tags: [navigation, comments, sqlite]
+---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1"
+
+- extendedWaitUntil:
+    visible:
+      id: "post-detail-screen"
+    timeout: 5000
+- assertVisible:
+    id: "detail-post"
+- assertVisible: "あ〜飲みたい☕️ 今日行きます！"   # seed comment #1 for p1
+- assertVisible: "にゃーん (一緒に寝てる黒猫)"     # seed comment #2 for p1
+- takeScreenshot:
+    path: "detail_p1_with_seed_comments"
+
+- tapOn:
+    id: "comment-input"
+- inputText: "DETAIL_CANARY_テストコメント"
+- hideKeyboard
+- tapOn:
+    id: "comment-submit"
+- extendedWaitUntil:
+    visible: "DETAIL_CANARY_テストコメント"
+    timeout: 4000
+- takeScreenshot:
+    path: "detail_after_comment"
+
+- tapOn:
+    id: "detail-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 4000
