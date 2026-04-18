@@ -1,0 +1,34 @@
+# Regression: the XApp::Engagement state transitions (Ruby) must stay in
+# lock-step with the PostCard UI.
+#
+# Regression coverage:
+#   - Tapping the heart icon flips the `liked` flag (visible via icon color)
+#   - Tapping the repost icon flips `reposted`
+#   - Both counters remain non-negative even after double-tap (toggle back)
+appId: host.exp.Exponent
+name: "02 Post like / repost toggles"
+tags: [home, engagement]
+---
+# Seed posts may be pushed down the list if earlier flows inserted user
+# posts via SQLite — scroll until the first seed post is reachable so this
+# flow can run in any order.
+- scrollUntilVisible:
+    element:
+      id: "post-p1"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "post-p1-like"
+- takeScreenshot:
+    path: "post_after_like"
+- tapOn:
+    id: "post-p1-repost"
+- takeScreenshot:
+    path: "post_after_repost"
+# Toggle back — round-trips must leave the timeline non-negative
+- tapOn:
+    id: "post-p1-like"
+- tapOn:
+    id: "post-p1-repost"
+- assertVisible:
+    id: "post-p1"

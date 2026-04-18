@@ -1,0 +1,48 @@
+# Regression: the compose flow writes a new row into SQLite via
+# XApp::Store and the new post appears at the top of the Ruby-rendered
+# FlatList.
+#
+# Regression coverage:
+#   - FAB → composer modal mounts
+#   - TextInput accepts multiline Japanese + emoji
+#   - Submit prepends the post (latest-first) and dismisses the composer
+#   - Cancel closes the modal without writing
+appId: host.exp.Exponent
+name: "04 Compose persists a new post"
+tags: [compose, sqlite]
+---
+# --- Cancel path first (no row should be inserted) ---
+- tapOn:
+    id: "compose-fab"
+- assertVisible:
+    id: "composer-root"
+- tapOn:
+    id: "composer-input"
+- inputText: "うっかり投稿のつもりが気が変わった"
+- tapOn:
+    id: "composer-cancel"
+- assertNotVisible:
+    id: "composer-root"
+
+# --- Real submit path ---
+- tapOn:
+    id: "compose-fab"
+- assertVisible:
+    id: "composer-root"
+- takeScreenshot:
+    path: "compose_open"
+- tapOn:
+    id: "composer-input"
+- inputText: "Rubyで書いたUIから、Rubyでポストしてるマスター🐈☕️"
+- takeScreenshot:
+    path: "compose_typed"
+- tapOn:
+    id: "composer-submit"
+- extendedWaitUntil:
+    visible: "Rubyで書いたUIから、Rubyでポストしてるマスター🐈☕️"
+    timeout: 5000
+- assertNotVisible:
+    id: "composer-root"
+- assertVisible: "マスター"
+- takeScreenshot:
+    path: "compose_after_submit"

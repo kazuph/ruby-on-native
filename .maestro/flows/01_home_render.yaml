@@ -1,0 +1,27 @@
+# Smoke: boot straight into the Home tab and verify the Ruby/Opal backed
+# timeline rendered correctly.
+#
+# Regression coverage:
+#   - Root component mounts (app-root)
+#   - Ruby render pipeline is alive (engine-banner with Opal info)
+#   - Top tabs render and default to "おすすめ"
+#   - At least one seed post is in the FlatList (post-p1)
+appId: host.exp.Exponent
+name: "01 Home render"
+tags: [smoke, home]
+---
+- assertVisible:
+    id: "app-root"
+- assertVisible:
+    id: "home-screen"
+- assertVisible:
+    id: "top-bar"
+- assertVisible: "おすすめ"
+- assertVisible: "フォロー中"
+- assertVisible:
+    id: "engine-banner"
+- assertVisible: "Engine: Opal (opal)"
+- assertVisible:
+    id: "post-p1"
+- takeScreenshot:
+    path: "home_initial"

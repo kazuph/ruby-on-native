@@ -1,0 +1,45 @@
+# Regression: bottom tab bar navigates to each of the 4 screens and each
+# screen mounts its own content (Ruby-side `use_memo` snapshots).
+#
+# Regression coverage:
+#   - search  → trends list (XApp::Feed.trends)
+#   - notifs  → notification items (XApp::Feed.notifications)
+#   - messages → DM previews (XApp::Feed.messages)
+#   - Back to home restores the home screen
+appId: host.exp.Exponent
+name: "03 Bottom tab navigation"
+tags: [navigation]
+---
+# Search
+- tapOn:
+    id: "bottom-tab-search"
+- assertVisible:
+    id: "search-screen"
+- assertVisible: "あなた向けのトレンド"
+- assertVisible: "#Opal"
+- takeScreenshot:
+    path: "nav_search"
+
+# Notifications
+- tapOn:
+    id: "bottom-tab-notifications"
+- assertVisible:
+    id: "notifications-screen"
+- assertVisible: "通知"
+- takeScreenshot:
+    path: "nav_notifications"
+
+# Messages
+- tapOn:
+    id: "bottom-tab-messages"
+- assertVisible:
+    id: "messages-screen"
+- assertVisible: "メッセージ"
+- takeScreenshot:
+    path: "nav_messages"
+
+# Back to Home
+- tapOn:
+    id: "bottom-tab-home"
+- assertVisible:
+    id: "home-screen"

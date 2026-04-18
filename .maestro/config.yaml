@@ -1,0 +1,15 @@
+# Shared defaults for every flow in this directory. Maestro picks this up
+# automatically when you run `maestro test .maestro/flows/…` so we don't
+# have to repeat the app id or output folder in each flow.
+#
+# When running a full regression sweep:
+#
+#     maestro test .maestro/flows/
+#
+# That runs every *.yaml flow under ./flows alphabetically and fails the
+# whole suite on the first red step. Screenshots go to $PWD by default;
+# our convention is to run from the repo root so they land next to
+# `.artifacts/` and can be moved into the evidence folder.
+appId: host.exp.Exponent
+---
+# (no onFlowStart — each flow re-launches the app for deterministic state)

@@ -1,0 +1,46 @@
+# Regression: user posts survive an app relaunch because XApp::Store (Ruby
+# wrapper around expo-sqlite) persists them to `xapp.db` on disk.
+#
+# The SQLite DB is owned by the Expo Go container; as long as we don't
+# clear the app's state (`clearState: false`), the row survives the
+# process restart.
+#
+# Regression coverage:
+#   - Submit a uniquely-tagged post
+#   - Kill + relaunch Expo Go
+#   - The same post is still at the top of the timeline
+appId: host.exp.Exponent
+name: "05 SQLite persists composed posts across restarts"
+tags: [compose, sqlite, persistence]
+---
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+- tapOn:
+    id: "compose-fab"
+- tapOn:
+    id: "composer-input"
+- inputText: "SQLITE_CANARY_20260418_永続化テスト"
+- tapOn:
+    id: "composer-submit"
+- extendedWaitUntil:
+    visible: "SQLITE_CANARY_20260418_永続化テスト"
+    timeout: 5000
+- takeScreenshot:
+    path: "sqlite_before_restart"
+
+# Relaunch via Expo Go deep link. `openLink` works even while the app is
+# running — Expo Go tears down the old JS context before reloading the
+# bundle. The SQLite file on disk is untouched.
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 25000
+- extendedWaitUntil:
+    visible: "SQLITE_CANARY_20260418_永続化テスト"
+    timeout: 10000
+- takeScreenshot:
+    path: "sqlite_after_restart"
