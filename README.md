@@ -4,16 +4,11 @@
 > Opal が Ruby ソースを JavaScript にコンパイルし、React Native (Expo) が
 > そのまま iOS / Android でレンダリング。投稿は SQLite に永続化。
 
-<p align="center">
-  <img src="docs/screenshots/home_initial.png"              width="200"/>
-  <img src="docs/screenshots/post_detail_seed_comments.png" width="200"/>
-  <img src="docs/screenshots/profile_from_avatar.png"       width="200"/>
-  <img src="docs/screenshots/settings_sheet.png"            width="200"/>
-</p>
-<p align="center">
-  <img src="docs/screenshots/compose_open.png"   width="200"/>
-  <img src="docs/screenshots/search_results.png" width="200"/>
-</p>
+|                        Home                         |                      Post Detail                      |                       Profile                        |
+| :-------------------------------------------------: | :---------------------------------------------------: | :---------------------------------------------------: |
+| <img src="docs/screenshots/home_initial.png"/>      | <img src="docs/screenshots/post_detail_seed_comments.png"/> | <img src="docs/screenshots/profile_from_avatar.png"/> |
+|                      **Compose**                     |                       **Search**                       |                      **Settings**                      |
+| <img src="docs/screenshots/compose_open.png"/>      | <img src="docs/screenshots/search_results.png"/>      | <img src="docs/screenshots/settings_sheet.png"/>      |
 
 ## こころざし
 
