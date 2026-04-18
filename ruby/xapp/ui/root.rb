@@ -7,26 +7,46 @@ module XApp
 
     RootShell = UI.component 'RootShell' do |_props|
       insets       = use_safe_area_insets
-      tab, set_tab = use_state('home')
+      nav          = Nav.use
       top_padding  = insets[:top]    || 0
       bottom_inset = insets[:bottom] || 0
+
+      open_post = ->(post) { nav.navigate(:post_detail, post_id: post[:id]) }
+      back      = -> { nav.back }
+      set_tab   = ->(t) { nav.set_tab(t) }
 
       present View,
               testID: 'app-root',
               style:  [ROOT_STYLES[:root], { paddingTop: top_padding }] do
         present StatusBar, style: 'light'
+
         present View, style: ROOT_STYLES[:stage] do
-          case tab
-          when 'home'          then present Screens::HomeScreen
-          when 'search'        then present Screens::SearchScreen
-          when 'notifications' then present Screens::NotificationsScreen
-          when 'messages'      then present Screens::MessagesScreen
+          if nav.in_detail?
+            present Screens::PostDetailScreen,
+                    post_id: nav.top[:post_id],
+                    on_back: back
+          else
+            case nav.current_tab
+            when 'home'
+              present Screens::HomeScreen, on_open_post: open_post
+            when 'search'
+              present Screens::SearchScreen, on_open_post: open_post
+            when 'notifications'
+              present Screens::NotificationsScreen
+            when 'messages'
+              present Screens::MessagesScreen
+            end
           end
         end
-        present Components::BottomTabs,
-                active:       tab,
-                on_change:    set_tab,
-                bottom_inset: bottom_inset
+
+        # Hide the bottom tabs when drilling into the detail stack so the
+        # "Back" nav is the only way out (matches X.com iOS behaviour).
+        unless nav.in_detail?
+          present Components::BottomTabs,
+                  active:       nav.current_tab,
+                  on_change:    set_tab,
+                  bottom_inset: bottom_inset
+        end
       end
     end
 

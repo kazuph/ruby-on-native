@@ -63,6 +63,9 @@ module XApp
       PostCard = UI.component 'PostCard' do |props|
         post        = props[:post]
         on_change   = props[:on_change]
+        on_open     = props[:on_open]    # optional: tap on card → navigate
+        on_delete   = props[:on_delete]  # optional: tap trash on own posts
+        is_mine     = props[:is_mine]    # pre-computed by parent (nil/false for seed)
         prefix      = props[:test_id_prefix] || "post-#{post[:id]}"
 
         like_color      = post[:liked]      ? COLORS[:like]   : COLORS[:textMuted]
@@ -72,8 +75,17 @@ module XApp
         handle_like     = -> { on_change.call(XApp::Engagement.toggle_like(post)) }
         handle_repost   = -> { on_change.call(XApp::Engagement.toggle_repost(post)) }
         handle_bookmark = -> { on_change.call(XApp::Engagement.toggle_bookmark(post)) }
+        handle_open     = -> { on_open&.call(post) }
+        handle_delete   = -> { on_delete&.call(post) }
 
-        present View, style: POST_CARD_STYLES[:card], testID: prefix do
+        present Pressable,
+                onPress:    handle_open,
+                # Let Maestro (and VoiceOver) still see every child node;
+                # otherwise the outer Pressable swallows the tree into one
+                # button-style accessible element and text assertions fail.
+                accessible: false,
+                style:      POST_CARD_STYLES[:card],
+                testID:     prefix do
           present Image, source: { uri: post[:author][:avatarUrl] }, style: POST_CARD_STYLES[:avatar]
 
           present View, style: POST_CARD_STYLES[:body] do
@@ -95,7 +107,16 @@ module XApp
                 XApp::Formatter.relative_time(post[:createdAt])
               end
               present View, style: POST_CARD_STYLES[:grow]
-              present Ionicons, name: 'ellipsis-horizontal', size: 16, color: COLORS[:textMuted]
+              if is_mine
+                present Pressable,
+                        onPress: handle_delete,
+                        hitSlop: 8,
+                        testID:  "#{prefix}-delete" do
+                  present Ionicons, name: 'trash-outline', size: 16, color: COLORS[:textMuted]
+                end
+              else
+                present Ionicons, name: 'ellipsis-horizontal', size: 16, color: COLORS[:textMuted]
+              end
             end
 
             present Text, style: POST_CARD_STYLES[:body_text] do

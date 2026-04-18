@@ -1,0 +1,63 @@
+# Regression: search now actually filters the timeline via XApp::Store.search.
+# Empty query keeps showing trends; non-empty query shows ranked results.
+#
+# Regression coverage:
+#   - search-screen shows trends by default
+#   - Typing a keyword flips the screen to `search-results`
+#   - Matching posts are returned
+#   - A bogus keyword lands on `search-empty`
+#   - The clear button resets back to trends
+appId: host.exp.Exponent
+name: "07 Search by body / handle / name"
+tags: [search]
+---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+- tapOn:
+    id: "bottom-tab-search"
+- assertVisible:
+    id: "search-screen"
+- assertVisible:
+    id: "search-trends"
+- assertVisible: "#Opal"
+
+# --- Happy path ---
+- tapOn:
+    id: "search-input"
+- inputText: "Opal"
+- hideKeyboard
+- extendedWaitUntil:
+    visible:
+      id: "search-results"
+    timeout: 3000
+# Maestro's text assertions are full-string regex, so wrap the expected
+# substring in `.*` anchors.
+- assertVisible: ".*「Opal」の結果.*件.*"
+- takeScreenshot:
+    path: "search_results_opal"
+
+# --- Empty match ---
+- tapOn:
+    id: "search-clear"
+- assertVisible:
+    id: "search-trends"
+- tapOn:
+    id: "search-input"
+- inputText: "このキーワードはどこにもないよ"
+- extendedWaitUntil:
+    visible:
+      id: "search-empty"
+    timeout: 3000
+- takeScreenshot:
+    path: "search_empty"
+
+# Clean up state for subsequent flows
+- tapOn:
+    id: "search-clear"
+- assertVisible:
+    id: "search-trends"

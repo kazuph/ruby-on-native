@@ -283,6 +283,17 @@ module XApp
       Native(`__RN__.Expo.useSafeAreaInsets()`)
     end
 
+    # --- OS-level UI ----------------------------------------------------
+
+    # `confirm '削除しますか？', 'このポストを削除します', ok: '削除' do; ... end`
+    # Shows an OS confirmation dialog and runs the block iff the user
+    # taps OK. Cancel is a silent no-op.
+    def confirm(title, message, ok: 'OK', cancel: 'キャンセル', &on_ok)
+      cb = on_ok ? wrap_proc(on_ok) : `function(){}`
+      `__RN__.UI.confirm(#{title}, #{message}, #{ok}, #{cancel}, #{cb})`
+      nil
+    end
+
     # --- Component factory ----------------------------------------------
 
     # `component 'Name' do |props| ... end`

@@ -4,6 +4,7 @@
 
 import * as React from 'react';
 import {
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -44,6 +45,16 @@ type Bridge = {
     SafeAreaProvider: typeof SafeAreaProvider;
     useSafeAreaInsets: typeof useSafeAreaInsets;
     Ionicons: typeof Ionicons;
+  };
+  /** Tiny helpers Ruby uses for OS-level UI that isn't a component. */
+  UI: {
+    confirm: (
+      title: string,
+      message: string,
+      okLabel: string,
+      cancelLabel: string,
+      onOk: () => void,
+    ) => void;
   };
   SQLite: {
     open: (name: string) => SQLite.SQLiteDatabase;
@@ -91,6 +102,14 @@ if (!g.__RN__) {
       SafeAreaProvider,
       useSafeAreaInsets,
       Ionicons,
+    },
+    UI: {
+      confirm: (title, message, okLabel, cancelLabel, onOk) => {
+        Alert.alert(title, message, [
+          { text: cancelLabel, style: 'cancel' },
+          { text: okLabel, style: 'destructive', onPress: onOk },
+        ]);
+      },
     },
     SQLite: {
       open: (name) => SQLite.openDatabaseSync(name),

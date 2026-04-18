@@ -9,6 +9,13 @@ appId: host.exp.Exponent
 name: "02 Post like / repost toggles"
 tags: [home, engagement]
 ---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
 # Seed posts may be pushed down the list if earlier flows inserted user
 # posts via SQLite — scroll until the first seed post is reachable so this
 # flow can run in any order.

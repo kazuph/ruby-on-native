@@ -32,22 +32,35 @@ module XApp
         banner_note:  { color: COLORS[:textSecondary], fontSize: 12, lineHeight: 16 }
       )
 
-      HomeScreen = UI.component 'HomeScreen' do |_props|
+      HomeScreen = UI.component 'HomeScreen' do |props|
+        on_open_post = props[:on_open_post]
+
         active_top,   set_active_top   = use_state('foryou')
         posts,        set_posts        = use_state(-> { XApp::API.timeline })
         compose_open, set_compose_open = use_state(false)
-        engine                         = use_memo { XApp::API.engine_info }
-        me                             = use_memo { XApp::API.me }
+        engine                         = use_constant { XApp::API.engine_info }
+        me                             = use_constant { XApp::API.me }
+        my_handle                      = me[:handle]
+
+        refresh_posts = -> { set_posts.call(XApp::API.timeline) }
 
         update_post = use_callback do |next_post|
-          set_posts.call(lambda { |current|
-            current.map { |p| p[:id] == next_post[:id] ? next_post : p }
-          })
+          set_posts.call(->(current) { current.map { |p| p[:id] == next_post[:id] ? next_post : p } })
         end
 
         submit_post = lambda do |body|
-          set_posts.call(lambda { |current| [XApp::API.build_new_post(body)] + current })
+          XApp::API.build_new_post(body)
+          refresh_posts.call
           set_compose_open.call(false)
+        end
+
+        delete_post = lambda do |post|
+          confirm('ポストを削除しますか？',
+                  '削除すると元に戻せません。',
+                  ok: '削除する', cancel: 'キャンセル') do
+            XApp::API.delete_post(post[:id])
+            refresh_posts.call
+          end
         end
 
         visible_posts = if active_top == 'following'
@@ -80,9 +93,13 @@ module XApp
                   keyExtractor:        ->(item, _i) { item[:id] },
                   ListHeaderComponent: banner,
                   renderItem:          ->(info) {
+                    item = info[:item]
                     present Components::PostCard,
-                            post:      info[:item],
-                            on_change: update_post
+                            post:      item,
+                            on_change: update_post,
+                            on_open:   on_open_post,
+                            on_delete: delete_post,
+                            is_mine:   item[:author][:handle] == my_handle
                   }
 
           present Pressable,

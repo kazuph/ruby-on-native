@@ -11,6 +11,13 @@ appId: host.exp.Exponent
 name: "04 Compose persists a new post"
 tags: [compose, sqlite]
 ---
+# Reset JS state (SQLite file survives the relaunch)
+- stopApp
+- openLink: "exp://127.0.0.1:8081"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
 # --- Cancel path first (no row should be inserted) ---
 - tapOn:
     id: "compose-fab"

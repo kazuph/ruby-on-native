@@ -21,7 +21,11 @@ module XApp
     # from `Feed.timeline` — matches the X feed mental model where your own
     # just-posted tweet appears at the top.
     def timeline
-      Store.user_posts + Feed.timeline.map(&:to_h)
+      seed = Feed.timeline.map do |p|
+        h = p.to_h
+        h.merge(replies: h[:replies] + Store.comment_count(h[:id]))
+      end
+      Store.user_posts + seed
     end
 
     def me
@@ -31,6 +35,28 @@ module XApp
     # Persist a new post and return it shaped like a timeline entry.
     def build_new_post(body)
       Store.insert_user_post(body)
+    end
+
+    # Remove a user-composed post (seed posts are immutable). Returns true
+    # when a row was actually deleted.
+    def delete_post(id)
+      Store.delete_user_post(id)
+    end
+
+    def find_post(id)
+      timeline.find { |p| p[:id] == id }
+    end
+
+    def comments(post_id)
+      Store.comments(post_id)
+    end
+
+    def add_comment(post_id, body)
+      Store.insert_comment(post_id, body)
+    end
+
+    def search(query)
+      Store.search(query)
     end
 
     def user(handle)
